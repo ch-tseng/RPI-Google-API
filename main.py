@@ -10,8 +10,6 @@ from collections import defaultdict
 from io import StringIO
 import io, time, sys
 from matplotlib import pyplot as plt
-plt.ioff()
-
 from PIL import Image
 import picamera
 
@@ -93,6 +91,26 @@ def array2PIL(arr, size):
     arr = np.c_[arr, 255*np.ones((len(arr),1), np.uint8)]
     return Image.frombuffer(mode, size, arr.tostring(), 'raw', mode, 0, 1)
 
+def pltDisplay(img, interactive=0, savePic=0):
+  plt.close('all')
+
+  plt.figure(figsize=IMAGE_SIZE)
+  plt.axis("off")
+  plt.imshow(image_np)
+
+  if(interactive==0):
+    plt.ioff()
+    #plt.figure(figsize=IMAGE_SIZE)
+    plt.imshow(image_np)
+
+  else:
+    plt.ion() # ---> Interactive mode on, this will not wait for the plt window closed.
+    plt.imshow(image_np)
+    plt.show()
+
+  if(savePic==1):
+    plt.savefig('detect.jpg')
+
 
 #Detection
 # For the sake of simplicity we will use only 2 images:
@@ -104,7 +122,7 @@ PATH_TO_TEST_IMAGES_DIR = 'test_images'
 TEST_IMAGE_PATHS = [ "/home/pi/models/test4.jpg" ]
 # Size, in inches, of the output images.
 #IMAGE_SIZE = (12, 8)
-IMAGE_SIZE = (12, 12)
+IMAGE_SIZE = (12, 9)
 
 ii = 0
 with detection_graph.as_default():
@@ -119,20 +137,19 @@ with detection_graph.as_default():
     detection_classes = detection_graph.get_tensor_by_name('detection_classes:0')
     num_detections = detection_graph.get_tensor_by_name('num_detections:0')
 
-    stream = io.BytesIO()
+    #stream = io.BytesIO()
 
     camera = picamera.PiCamera()
     camera.rotation = 0
     camera.resolution = (1280, 960)
-    camera.framerate = 24
+    #camera.framerate = 1
     #camera.hflip = True
     #camera.vflip = True
 
     while True:
-      camera.capture(stream, format='jpeg')
-      stream.seek(0)
+      camera.capture("cap.jpg")
 
-      image = Image.open(stream)
+      image = Image.open("cap.jpg")
       #image.thumbnail( (640,480), Image.ANTIALIAS)
       #image = image.rotate(90)
 
@@ -156,18 +173,24 @@ with detection_graph.as_default():
           category_index,
           use_normalized_coordinates=True,
           line_thickness=8)
-      plt.figure(figsize=IMAGE_SIZE)
-      plt.axis("off")
-      plt.imshow(image_np)
-      plt.show()
 
-      #image_np.thumbnail( (320,240), Image.ANTIALIAS)
+      pltDisplay(image_np, interactive=0, savePic=0)
+      #plt.close('all')      
+      #plt.figure(figsize=IMAGE_SIZE)
+      #plt.axis("off")
+      #plt.ion() # ---> Interactive mode on, this will not wait for the plt window closed.
+
       lcdBuffer = disp.buffer
       (hh, ww, channel) = (image_np.shape)
-      displayIMG = array2PIL(image_np, (hh, ww))
-      displayIMG.rotate(-90)
-      displayIMG.thumbnail( (320, 240), Image.ANTIALIAS)
-      lcdBuffer.paste(displayIMG, (0, 0))
+      displayIMG = array2PIL(image_np, (ww, hh))
+      #displayIMG = Image.open( "detect.jpg" )
+      displayIMG.thumbnail( (408, 544), Image.ANTIALIAS)
+      lcdBuffer.paste(displayIMG.rotate( 90, Image.BILINEAR ), (-50, 5))
+      #displayIMG.rotate(-90)
+      #displayIMG = Image.open( "detect.jpg" )
+      #displayIMG.thumbnail( (240, 320))
+      #displayIMG.rotate(-90)
+      #lcdBuffer.paste(displayIMG, (0, 0))
       disp.display()
 
       ii += 1

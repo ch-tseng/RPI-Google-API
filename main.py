@@ -46,6 +46,8 @@ disp.clear((0, 0, 0))
 draw = disp.draw()
 #############################################################################
 
+categoriesDetected = ()
+
 #Model preparation
 # What model to download.
 MODEL_NAME = 'ssd_mobilenet_v1_coco_11_06_2017'
@@ -91,26 +93,46 @@ def array2PIL(arr, size):
     arr = np.c_[arr, 255*np.ones((len(arr),1), np.uint8)]
     return Image.frombuffer(mode, size, arr.tostring(), 'raw', mode, 0, 1)
 
-def pltDisplay(img, interactive=0, savePic=0):
-  plt.close('all')
+def resizeIMG(img, width=320):
+  wpercent = (width/float(img.size[0]))
+  hsize = int((float(img.size[1])*float(wpercent)))
+  img = img.resize((width,hsize), Image.ANTIALIAS)
+  return img
 
-  plt.figure(figsize=IMAGE_SIZE)
-  plt.axis("off")
-  plt.imshow(image_np)
-
-  if(interactive==0):
-    plt.ioff()
-    #plt.figure(figsize=IMAGE_SIZE)
-    plt.imshow(image_np)
-
-  else:
-    plt.ion() # ---> Interactive mode on, this will not wait for the plt window closed.
-    plt.imshow(image_np)
-    plt.show()
+def displayIMG(img, pltshow=0, lcdDisplay=1, savePic=0):
 
   if(savePic==1):
-    plt.savefig('detect.jpg')
+    im = Image.fromarray(img)
+    im.save("detect.jpg")
 
+  if(lcdDisplay==1):
+    lcdBuffer = disp.buffer
+    #(hh, ww, channel) = (image_np.shape)
+    #displayIMG = array2PIL(image_np, (1280, 960))
+    #displayIMG = Image.fromarray(img)
+    displayIMG = Image.open("detect.jpg").convert("RGBA")
+    #displayIMG = displayIMG.rotate(90).resize((240, 320))
+    #displayIMG.thumbnail((240, 320), Image.ANTIALIAS)
+    displayIMG = resizeIMG(displayIMG, 320)
+    #displayIMG.save("detect2.jpg")
+
+    displayIMG = displayIMG.rotate(-90)
+    #displayIMG = displayIMG.resize((240, 320))
+    #textimage = Image.new('RGBA', (320, 240), (0,0,0,0))
+    lcdImage = Image.new("RGBA", (240, 320), (255, 255, 255))
+    lcdImage.paste(displayIMG, (0, 0, 240, 320), displayIMG)
+    lcdBuffer.paste(lcdImage, (0, 0, 240, 320), lcdImage)
+    disp.display()
+
+  if(pltshow==1):
+    plt.close('all')
+    #plt.figure(figsize=IMAGE_SIZE)
+    #plt.axis("off")
+    #plt.ion() # ---> Interactive mode on, this will wait for the plt window be closed.
+    plt.ioff()  # ---> Interactive mode off, this will not wait for the plt window be closed.
+    plt.imshow(image_np)
+    plt.show()
+    
 
 #Detection
 # For the sake of simplicity we will use only 2 images:
@@ -122,7 +144,7 @@ PATH_TO_TEST_IMAGES_DIR = 'test_images'
 TEST_IMAGE_PATHS = [ "/home/pi/models/test4.jpg" ]
 # Size, in inches, of the output images.
 #IMAGE_SIZE = (12, 8)
-IMAGE_SIZE = (12, 9)
+IMAGE_SIZE = (13.2, 10)
 
 ii = 0
 with detection_graph.as_default():
@@ -164,6 +186,7 @@ with detection_graph.as_default():
       (boxes, scores, classes, num) = sess.run(
           [detection_boxes, detection_scores, detection_classes, num_detections],
           feed_dict={image_tensor: image_np_expanded})
+
       # Visualization of the results of a detection.
       vis_util.visualize_boxes_and_labels_on_image_array(
           image_np,
@@ -174,25 +197,15 @@ with detection_graph.as_default():
           use_normalized_coordinates=True,
           line_thickness=8)
 
-      pltDisplay(image_np, interactive=0, savePic=0)
-      #plt.close('all')      
-      #plt.figure(figsize=IMAGE_SIZE)
-      #plt.axis("off")
-      #plt.ion() # ---> Interactive mode on, this will not wait for the plt window closed.
-
-      lcdBuffer = disp.buffer
-      (hh, ww, channel) = (image_np.shape)
-      displayIMG = array2PIL(image_np, (ww, hh))
-      #displayIMG = Image.open( "detect.jpg" )
-      displayIMG.thumbnail( (408, 544), Image.ANTIALIAS)
-      lcdBuffer.paste(displayIMG.rotate( 90, Image.BILINEAR ), (-50, 5))
-      #displayIMG.rotate(-90)
-      #displayIMG = Image.open( "detect.jpg" )
-      #displayIMG.thumbnail( (240, 320))
-      #displayIMG.rotate(-90)
-      #lcdBuffer.paste(displayIMG, (0, 0))
-      disp.display()
+      displayIMG(image_np, pltshow=1, lcdDisplay=1, savePic=1)
+      #lcdBuffer = disp.buffer
+      #(hh, ww, channel) = (image_np.shape)
+      #displayIMG = array2PIL(image_np, (ww, hh))
+      #displayIMG.thumbnail( (408, 544), Image.ANTIALIAS)
+      #lcdBuffer.paste(displayIMG.rotate( 90, Image.BILINEAR ), (-50, 5))
+      #disp.display()
 
       ii += 1
       print( "Picture #{}".format(ii))
+      print( vis_util.categoriesDetected)
    

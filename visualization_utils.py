@@ -367,6 +367,7 @@ def visualize_boxes_and_labels_on_image_array(image,
   # Create a display string (and color) for every box location, group any boxes
   # that correspond to the same location.
   global categoriesDetected
+  categoriesDetected = []
 
   box_to_display_str_map = collections.defaultdict(list)
   box_to_color_map = collections.defaultdict(str)

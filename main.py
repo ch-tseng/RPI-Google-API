@@ -11,6 +11,7 @@ from io import StringIO
 import io, time, sys
 from matplotlib import pyplot as plt
 from PIL import Image
+#import ImageDraw
 import picamera
 
 sys.path.append("..")
@@ -18,33 +19,8 @@ sys.path.append("..")
 from utils import label_map_util
 from utils import visualization_utils as vis_util
 
-#for LCD Display ##############################
-import io, time, sys
-from PIL import Image
-from PIL import ImageDraw
-from PIL import ImageFont
-
-import Adafruit_ILI9341 as TFT
-import Adafruit_GPIO as GPIO
-import Adafruit_GPIO.SPI as SPI
-
-DC = 18
-RST = 23
-SPI_PORT = 0
-SPI_DEVICE = 0
-
-# Create TFT LCD display class.
-disp = TFT.ILI9341(DC, rst=RST, spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE, max_speed_hz=64000000))
-
-# Initialize display.
-disp.begin()
-
-# Clear the display to a red background.
-# Can pass any tuple of red, green, blue values (from 0 to 255 each).
-disp.clear((0, 0, 0))
-
-draw = disp.draw()
-#############################################################################
+from libraryCH.device.lcd import ILI9341
+lcd = ILI9341(LCD_size_w=240, LCD_size_h=320, LCD_Rotate=270)
 
 categoriesDetected = ()
 
@@ -71,7 +47,7 @@ with detection_graph.as_default():
     od_graph_def.ParseFromString(serialized_graph)
     tf.import_graph_def(od_graph_def, name='')
 
-#Loading label map¶
+#Loading label map
 label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
 categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES, use_display_name=True)
 category_index = label_map_util.create_category_index(categories)
@@ -93,9 +69,9 @@ def array2PIL(arr, size):
     arr = np.c_[arr, 255*np.ones((len(arr),1), np.uint8)]
     return Image.frombuffer(mode, size, arr.tostring(), 'raw', mode, 0, 1)
 
-def resizeIMG(img, width=320):
-  wpercent = (width/float(img.size[0]))
-  hsize = int((float(img.size[1])*float(wpercent)))
+def resizeIMG(img, width=320, hsize=240):
+  #wpercent = (width/float(img.size[0]))
+  #hsize = int((float(img.size[1])*float(wpercent)))
   img = img.resize((width,hsize), Image.ANTIALIAS)
   return img
 
@@ -106,27 +82,17 @@ def displayIMG(img, pltshow=0, lcdDisplay=1, savePic=0):
     im.save("detect.jpg")
 
   if(lcdDisplay==1):
-    lcdBuffer = disp.buffer
-    #(hh, ww, channel) = (image_np.shape)
-    #displayIMG = array2PIL(image_np, (1280, 960))
-    #displayIMG = Image.fromarray(img)
-    displayIMG = Image.open("detect.jpg").convert("RGBA")
-    #displayIMG = displayIMG.rotate(90).resize((240, 320))
-    #displayIMG.thumbnail((240, 320), Image.ANTIALIAS)
-    displayIMG = resizeIMG(displayIMG, 320)
-    #displayIMG.save("detect2.jpg")
+    displayIMG = Image.fromarray(img)
+    displayIMG = resizeIMG(displayIMG, 320, 320)
+    displayIMG = displayIMG.rotate(180)
 
-    displayIMG = displayIMG.rotate(-90)
-    #displayIMG = displayIMG.resize((240, 320))
-    #textimage = Image.new('RGBA', (320, 240), (0,0,0,0))
-    lcdImage = Image.new("RGBA", (240, 320), (255, 255, 255))
-    lcdImage.paste(displayIMG, (0, 0, 240, 320), displayIMG)
-    lcdBuffer.paste(lcdImage, (0, 0, 240, 320), lcdImage)
-    disp.display()
+    x, y = displayIMG.size
+    lcdImage = Image.new("RGB", (320,320), "white")
+    lcdImage.paste(displayIMG, (0,0,x,y))
+    lcd.displayImg(np.array(displayIMG) )
 
   if(pltshow==1):
     plt.close('all')
-    #plt.figure(figsize=IMAGE_SIZE)
     #plt.axis("off")
     #plt.ion() # ---> Interactive mode on, this will wait for the plt window be closed.
     plt.ioff()  # ---> Interactive mode off, this will not wait for the plt window be closed.
@@ -144,7 +110,7 @@ PATH_TO_TEST_IMAGES_DIR = 'test_images'
 TEST_IMAGE_PATHS = [ "/home/pi/models/test4.jpg" ]
 # Size, in inches, of the output images.
 #IMAGE_SIZE = (12, 8)
-IMAGE_SIZE = (13.2, 10)
+IMAGE_SIZE = (6.4, 4.8)
 
 ii = 0
 with detection_graph.as_default():
@@ -162,9 +128,9 @@ with detection_graph.as_default():
     #stream = io.BytesIO()
 
     camera = picamera.PiCamera()
-    camera.rotation = 0
-    camera.resolution = (1280, 960)
-    #camera.framerate = 1
+    camera.rotation = 180
+    #camera.resolution = (1296, 972)
+    camera.resolution = (640, 480)
     #camera.hflip = True
     #camera.vflip = True
 
@@ -197,7 +163,7 @@ with detection_graph.as_default():
           use_normalized_coordinates=True,
           line_thickness=8)
 
-      displayIMG(image_np, pltshow=1, lcdDisplay=1, savePic=1)
+      displayIMG(image_np, pltshow=0, lcdDisplay=1, savePic=0)
       #lcdBuffer = disp.buffer
       #(hh, ww, channel) = (image_np.shape)
       #displayIMG = array2PIL(image_np, (ww, hh))

@@ -22,14 +22,13 @@ from utils import visualization_utils as vis_util
 from libraryCH.device.lcd import ILI9341
 lcd = ILI9341(LCD_size_w=240, LCD_size_h=320, LCD_Rotate=270)
 
-
-
 #----Configuration----------#
 # ssd_mobilenet_v1_coco_11_06_2017 / ssd_inception_v2_coco_11_06_2017
-MODEL_NAME = 'ssd_mobilenet_v1_coco_11_06_2017'
+MODEL_NAME = 'ssd_inception_v2_coco_11_06_2017'
 IMAGE_SIZE = (6.4, 4.8)
+BoxLineThickness = 5
 
-camera.rotation = 180
+camera.rotation = 0
 #camera.resolution = (1296, 972)
 camera.resolution = (640, 480)
 #camera.hflip = True
@@ -64,7 +63,7 @@ def resizeIMG(img, width=320, hsize=240):
 
 def displayIMG(img, pltshow=0, lcdDisplay=1, savePic=0):
   if(savePic==1):
-    now=datetime.datetime.now()
+    now = "{:%Y-%m-%d_%H%M}".format( datetime.datetime.now() )
     filename = "/home/pi/pics/" + now + ".jpg"
     im = Image.fromarray(img)
     im.save(filename)
@@ -125,16 +124,9 @@ with detection_graph.as_default():
     detection_classes = detection_graph.get_tensor_by_name('detection_classes:0')
     num_detections = detection_graph.get_tensor_by_name('num_detections:0')
 
-    camera = picamera.PiCamera()
-    camera.rotation = 180
-    #camera.resolution = (1296, 972)
-    camera.resolution = (640, 480)
-    #camera.hflip = True
-    #camera.vflip = True
-
-    stream = io.BytesIO()
     while True:
       #camera.capture("cap.jpg")
+      stream = io.BytesIO()
       camera.capture(stream, format='jpeg')
       stream.seek(0)
       image = Image.open(stream)
@@ -155,7 +147,7 @@ with detection_graph.as_default():
           np.squeeze(scores),
           category_index,
           use_normalized_coordinates=True,
-          line_thickness=8)
+          line_thickness=BoxLineThickness)
 
       displayIMG(image_np, pltshow=0, lcdDisplay=1, savePic=1)
 

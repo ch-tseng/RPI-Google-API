@@ -149,9 +149,18 @@ with detection_graph.as_default():
           use_normalized_coordinates=True,
           line_thickness=BoxLineThickness)
 
-      displayIMG(image_np, pltshow=0, lcdDisplay=1, savePic=1)
+      #displayIMG(image_np, pltshow=0, lcdDisplay=1, savePic=1)
 
       ii += 1
       print( "Picture #{}".format(ii))
       print( vis_util.categoriesDetected)
 
+      numPeople = 0
+      for object in vis_util.categoriesDetected:
+        if(object.find("person")>=0):
+          numPeople += 1
+
+      print( "Total person: {} found".format(numPeople))
+      savePic=1 if(numPeople>0) else 0
+
+      displayIMG(image_np, pltshow=0, lcdDisplay=1, savePic)

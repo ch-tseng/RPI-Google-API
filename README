@@ -1,0 +1,5 @@
+firsts,
+git clone https://github.com/tensorflow/models.git
+
+then,
+put dp.py, visualization_utils.py, font1.ttf, libraryCH under ~/models/research/object_detection/

@@ -9,7 +9,7 @@ import zipfile
 from collections import defaultdict
 from io import StringIO
 import io, time, sys
-from matplotlib import pyplot as plt
+#from matplotlib import pyplot as plt
 from PIL import Image
 import picamera
 camera = picamera.PiCamera()
@@ -97,6 +97,15 @@ PATH_TO_CKPT = MODEL_NAME + '/frozen_inference_graph.pb'
 PATH_TO_LABELS = os.path.join('data', 'mscoco_label_map.pbtxt')
 NUM_CLASSES = 90
 
+#Download
+#opener = urllib.request.URLopener()
+#opener.retrieve(DOWNLOAD_BASE + MODEL_FILE, MODEL_FILE)
+#tar_file = tarfile.open(MODEL_FILE)
+#for file in tar_file.getmembers():
+#  file_name = os.path.basename(file.name)
+#  if 'frozen_inference_graph.pb' in file_name:
+#    tar_file.extract(file, os.getcwd())
+
 #Load a (frozen) Tensorflow model into memory.
 detection_graph = tf.Graph()
 with detection_graph.as_default():
@@ -163,4 +172,4 @@ with detection_graph.as_default():
       print( "Total person: {} found".format(numPeople))
       savePic=1 if(numPeople>0) else 0
 
-      displayIMG(image_np, pltshow=0, lcdDisplay=1, savePic)
+      displayIMG(image_np, pltshow=0, lcdDisplay=1, savePic=savePic)

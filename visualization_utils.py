@@ -158,9 +158,7 @@ def draw_bounding_box_on_image(image,
   draw.line([(left, top), (left, bottom), (right, bottom),
              (right, top), (left, top)], width=thickness, fill=color)
   try:
-    #font = ImageFont.truetype('arial.ttf', 48)
-    #font = ImageFont.load("arial.pil")
-    font = ImageFont.truetype('font1.ttf',48 )
+    font = ImageFont.truetype('arial.ttf', 24)
   except IOError:
     font = ImageFont.load_default()
 
@@ -179,7 +177,7 @@ def draw_bounding_box_on_image(image,
         fill='black',
         font=font)
     text_bottom -= text_height - 2 * margin
-    #print("Categories: {}".format(display_str))
+
 
 def draw_bounding_boxes_on_image_array(image,
                                        boxes,
@@ -207,6 +205,7 @@ def draw_bounding_boxes_on_image_array(image,
   draw_bounding_boxes_on_image(image_pil, boxes, color, thickness,
                                display_str_list_list)
   np.copyto(image, np.array(image_pil))
+
 
 def draw_bounding_boxes_on_image(image,
                                  boxes,
@@ -375,10 +374,6 @@ def visualize_boxes_and_labels_on_image_array(image,
   box_to_keypoints_map = collections.defaultdict(list)
   if not max_boxes_to_draw:
     max_boxes_to_draw = boxes.shape[0]
-
-  #CH
-  #file = open("CategoriesDetected.txt","w")
-
   for i in range(min(max_boxes_to_draw, boxes.shape[0])):
     if scores is None or scores[i] > min_score_thresh:
       box = tuple(boxes[i].tolist())
@@ -401,18 +396,13 @@ def visualize_boxes_and_labels_on_image_array(image,
           display_str = 'score: {}%'.format(int(100 * scores[i]))
         box_to_display_str_map[box].append(display_str)
         categoriesDetected.append(display_str)
-        #CH
-        #file.write(display_str)
-   
 
         if agnostic_mode:
           box_to_color_map[box] = 'DarkOrange'
         else:
           box_to_color_map[box] = STANDARD_COLORS[
               classes[i] % len(STANDARD_COLORS)]
-  #CH
-  #file.close() 
-  
+
   # Draw all boxes onto image.
   for box, color in box_to_color_map.items():
     ymin, xmin, ymax, xmax = box

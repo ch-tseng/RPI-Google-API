@@ -33,7 +33,9 @@ camera.rotation = 0
 camera.resolution = (640, 480)
 #camera.hflip = True
 #camera.vflip = True
-
+saveOriginalSizePics = 1
+picSavePath = "/home/pi/pics"
+picOriginalPicSavePath = picSavePath + "/source"
 
 #-----Don't need to touch -------------#
 
@@ -61,10 +63,12 @@ def resizeIMG(img, width=320, hsize=240):
   img = img.resize((width,hsize), Image.ANTIALIAS)
   return img
 
-def displayIMG(img, pltshow=0, lcdDisplay=1, savePic=0):
+def displayIMG(img, imgID="captured", pltshow=0, lcdDisplay=1, savePic=0):
+  global picSavePath
+
   if(savePic==1):
-    now = "{:%Y-%m-%d_%H%M}".format( datetime.datetime.now() )
-    filename = "/home/pi/pics/" + now + ".jpg"
+    #now = "{:%Y-%m-%d_%H%M}".format( datetime.datetime.now() )
+    filename = picSavePath + "/" + imgID + ".jpg"
     im = Image.fromarray(img)
     im.save(filename)
 
@@ -134,13 +138,21 @@ with detection_graph.as_default():
     num_detections = detection_graph.get_tensor_by_name('num_detections:0')
 
     while True:
-      #camera.capture("cap.jpg")
-      stream = io.BytesIO()
-      camera.capture(stream, format='jpeg')
-      stream.seek(0)
-      image = Image.open(stream)
-      #image = Image.open("cap.jpg")
-      image_np = load_image_into_numpy_array(image)
+      imgID = "{:%Y-%m-%d_%H%M}".format( datetime.datetime.now() )
+
+      if(saveOriginalSizePics==0):
+        stream = io.BytesIO()
+        camera.capture(stream, format='jpeg')
+        stream.seek(0)
+        image = Image.open(stream)
+        image_np = load_image_into_numpy_array(image)
+
+      else:
+        sourcePicFile = picOriginalPicSavePath + "/" + imgID + ".jpg"
+        camera.capture(sourcePicFile)
+        image_np = Image.open(sourcePicFile)
+        image_np.thumbnail(camera.resolution)
+
       # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
       image_np_expanded = np.expand_dims(image_np, axis=0)
       # Actual detection.
@@ -172,4 +184,4 @@ with detection_graph.as_default():
       print( "Total person: {} found".format(numPeople))
       savePic=1 if(numPeople>0) else 0
 
-      displayIMG(image_np, pltshow=0, lcdDisplay=1, savePic=savePic)
+      displayIMG(image_np, imgID, pltshow=0, lcdDisplay=1, savePic=savePic)
